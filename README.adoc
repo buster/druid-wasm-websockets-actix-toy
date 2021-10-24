@@ -1,0 +1,6 @@
+wasm-pack build --target web --dev --out-dir static/pkg
+cargo watch -- wasm-pack build --target web --dev --out-dir static/pkg/
+
+http
+
+cargo run
