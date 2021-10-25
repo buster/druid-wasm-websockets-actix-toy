@@ -18,10 +18,14 @@ path = "src/toyui.rs"
 cfg-if = "1.0.0"
 tracing = "0.1.22"
 wasm-bindgen = "0.2.78"
+wasm-bindgen-futures = "0.4.28"
 console_error_panic_hook = "0.1.6"
 log = "0.4.11"
 instant = { version = "0.1.6", features = ["wasm-bindgen"] }
 js-sys = "0.3"
+
+ws_stream_wasm = "0.7"
+pharos = "0.5"
 
 #[dependencies.actix-web-actors]
 #git = "https://github.com/actix/actix-web.git"
@@ -48,7 +52,7 @@ features = ["console",
   "FileReader",
   "MessageEvent",
   "ProgressEvent",
-  "WebSocket"
+  "WebSocket",
 ]
 
 #[patch.crates-io]
