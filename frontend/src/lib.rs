@@ -1,9 +1,11 @@
-extern crate wee_alloc;
-
-// Use `wee_alloc` as the global allocator.
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
+// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+// allocator.
+cfg_if::cfg_if! {
+    if #[cfg(feature = "wee_alloc")] {
+        #[global_allocator]
+        static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+    }
+}
 use druid::widget::{Align, Button, Flex, Label, LensWrap, TextBox};
 use druid::{AppLauncher, Data, Env, Lens, LocalizedString, Widget, WidgetExt, WindowDesc};
 
@@ -36,7 +38,11 @@ struct LoginState {
 #[wasm_bindgen]
 pub fn wasm_main() {
     // This hook is necessary to get panic messages in the console
-    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "console_error_panic_hook")] {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+        }
+    }
     main()
 }
 
