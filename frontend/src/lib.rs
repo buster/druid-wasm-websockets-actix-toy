@@ -6,6 +6,21 @@ cfg_if::cfg_if! {
         static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
     }
 }
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "console_log")] {
+        fn init_log() {
+            use log::Level;
+            console_log::init_with_level(Level::Trace).expect("error initializing log");
+        }
+    } else {
+        fn init_log() {
+            use log::Level;
+            simple_logger::init_with_level(Level::Trace).unwrap();
+        }
+    }
+}
+
 use druid::widget::{Align, Button, Flex, Label, LensWrap, TextBox};
 use druid::{AppLauncher, Data, Env, Lens, LocalizedString, Widget, WidgetExt, WindowDesc};
 
@@ -47,6 +62,8 @@ pub fn wasm_main() {
 }
 
 pub fn main() {
+    init_log();
+    log::info!("Starting up...");
     // describe the main window
     //
     // Window title is set in index.html and window size is ignored on the web,
