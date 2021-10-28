@@ -10,7 +10,7 @@ use actix_web_actors::ws;
 use std::borrow::Cow;
 
 #[derive(RustEmbed)]
-#[folder = "frontend/static/"]
+#[folder = "../frontend/static/"]
 struct Asset;
 
 fn handle_embedded_file(path: &str) -> HttpResponse {

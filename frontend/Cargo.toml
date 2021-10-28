@@ -14,12 +14,15 @@ path = "src/lib.rs"
 name = "toyui"
 path = "src/toyui.rs"
 
-[dependencies]
+[features]
+
+ [dependencies]
 cfg-if = "1.0.0"
 tracing = "0.1.22"
 wasm-bindgen = "0.2.78"
 wasm-bindgen-futures = "0.4.28"
-console_error_panic_hook = "0.1.6"
+console_error_panic_hook = { version = "0.1.6", optional = true }
+wee_alloc = { version = "0.4.5", optional = true }
 log = "0.4.11"
 instant = { version = "0.1.6", features = ["wasm-bindgen"] }
 js-sys = "0.3"
@@ -63,3 +66,5 @@ features = ["console",
 [profile.release]
 opt-level = 's' # or 'z'
 lto = true
+[dev-dependencies]
+wasm-bindgen-test = "0.3.13"
