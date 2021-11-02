@@ -163,7 +163,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/{_:.*}").route(web::get().to(dist)))
             .service(web::resource("/dist/{_:.*}").route(web::get().to(dist)))
     })
-    .bind("127.0.0.1:8000")?
+    .bind("0.0.0.0:8000")?
     .run()
     .await
 }
