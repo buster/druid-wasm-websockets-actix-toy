@@ -1,0 +1,16 @@
+type Query {
+  apiVersion: String!
+  user(id: Int!): User
+}
+
+"a user"
+type User {
+  "the id"
+  id: Int!
+  "the name"
+  name: String!
+}
+
+schema {
+  query: Query
+}
