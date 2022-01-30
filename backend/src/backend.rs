@@ -1,46 +1,36 @@
 use std::borrow::Cow;
 
-use std::collections::HashMap;
-use std::io::Write;
+use std::{collections::HashMap, env};
 
 use actix_cors::Cors;
-use actix_web::body::{BoxBody, MessageBody};
+use actix_web::body::Body;
 use actix_web::{
     http::header,
     middleware,
     web::{self, Data},
     App, Error, HttpResponse, HttpServer,
 };
-use clap::Parser;
 use juniper::{graphql_object, EmptyMutation, EmptySubscription, GraphQLObject, RootNode};
 use juniper_actix::{graphiql_handler, graphql_handler, playground_handler};
 use mime_guess::from_path;
 use rust_embed::RustEmbed;
-
-/// Simple program to greet a person
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-struct Args {
-    /// Number of times to greet
-    #[clap(long)]
-    print_schema: bool,
-}
 
 #[derive(RustEmbed)]
 #[folder = "../frontend/static/"]
 struct Asset;
 
 fn handle_embedded_file(path: &str) -> HttpResponse {
-    if let Some(content) = Asset::get(path) {
-        let body: BoxBody = match content.data {
-            Cow::Borrowed(bytes) => MessageBody::boxed(bytes),
-            Cow::Owned(bytes) => MessageBody::boxed(bytes),
-        };
-        HttpResponse::Ok()
-            .content_type(from_path(path).first_or_octet_stream().as_ref())
-            .body(body)
-    } else {
-        HttpResponse::NotFound().body("404 Not Found")
+    match Asset::get(path) {
+        Some(content) => {
+            let body: Body = match content.data {
+                Cow::Borrowed(bytes) => bytes.into(),
+                Cow::Owned(bytes) => bytes.into(),
+            };
+            HttpResponse::Ok()
+                .content_type(from_path(path).first_or_octet_stream().as_ref())
+                .body(body)
+        }
+        None => HttpResponse::NotFound().body("404 Not Found"),
     }
 }
 
@@ -135,11 +125,9 @@ fn schema() -> Schema {
 async fn graphiql_route() -> Result<HttpResponse, Error> {
     graphiql_handler("/graphql", None).await
 }
-
 async fn playground_route() -> Result<HttpResponse, Error> {
     playground_handler("/graphql", None).await
 }
-
 async fn graphql_route(
     req: actix_web::HttpRequest,
     payload: actix_web::web::Payload,
@@ -148,20 +136,8 @@ async fn graphql_route(
     let context = Database::new();
     graphql_handler(&schema, &context, req, payload).await
 }
-
-fn write_schema() -> std::io::Result<()> {
-    use std::fs::File;
-    let file = File::create("schema.graphql");
-    file?.write_all(schema().as_schema_language().as_bytes())
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let args = Args::parse();
-    if args.print_schema {
-        write_schema()?;
-        return Result::Ok(());
-    }
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(schema()))

@@ -23,7 +23,7 @@ cfg_if::cfg_if! {
 
 use druid::widget::{Align, Button, Flex, Label, LensWrap, TextBox};
 use druid::{AppLauncher, Data, Env, Lens, LocalizedString, Widget, WidgetExt, WindowDesc};
-use graphql_client::GraphQLQuery;
+
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{ErrorEvent, MessageEvent, WebSocket};
@@ -35,13 +35,6 @@ use ws_stream_wasm::*;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 const TEXT_BOX_WIDTH: f64 = 200.0;
-
-#[derive(GraphQLQuery)]
-#[graphql(
-    schema_path = "../backend/schema.graphql",
-    query_path = "../backend/schema.graphql"
-)]
-pub struct UnionQuery;
 
 #[derive(Clone, Data, Lens)]
 struct ToyState {
