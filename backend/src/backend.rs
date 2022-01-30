@@ -1,19 +1,13 @@
-use std::borrow::Cow;
-
-use std::{collections::HashMap, env};
-
-use actix_cors::Cors;
 use actix_web::body::Body;
-use actix_web::{
-    http::header,
-    middleware,
-    web::{self, Data},
-    App, Error, HttpResponse, HttpServer,
-};
-use juniper::{graphql_object, EmptyMutation, EmptySubscription, GraphQLObject, RootNode};
-use juniper_actix::{graphiql_handler, graphql_handler, playground_handler};
+use actix_web::{web, App, Error, HttpServer};
 use mime_guess::from_path;
 use rust_embed::RustEmbed;
+
+use actix::Actor;
+use actix::StreamHandler;
+use actix_web::HttpResponse;
+use actix_web_actors::ws;
+use std::borrow::Cow;
 
 #[derive(RustEmbed)]
 #[folder = "../frontend/static/"]
@@ -39,126 +33,43 @@ fn index() -> HttpResponse {
 }
 
 fn dist(path: web::Path<String>) -> HttpResponse {
-    handle_embedded_file(&path)
-}
-#[derive(Clone, GraphQLObject)]
-///a user
-pub struct User {
-    ///the id
-    id: i32,
-    ///the name
-    name: String,
+    handle_embedded_file(&path.0)
 }
 
-#[derive(Default, Clone)]
-pub struct Database {
-    ///this could be a database connection
-    users: HashMap<i32, User>,
+/// Define HTTP actor
+struct MyWs;
+
+impl Actor for MyWs {
+    type Context = actix_web_actors::ws::WebsocketContext<Self>;
 }
-impl Database {
-    pub fn new() -> Database {
-        let mut users = HashMap::new();
-        users.insert(
-            1,
-            User {
-                id: 1,
-                name: "Aron".to_string(),
-            },
-        );
-        users.insert(
-            2,
-            User {
-                id: 2,
-                name: "Bea".to_string(),
-            },
-        );
-        users.insert(
-            3,
-            User {
-                id: 3,
-                name: "Carl".to_string(),
-            },
-        );
-        users.insert(
-            4,
-            User {
-                id: 4,
-                name: "Dora".to_string(),
-            },
-        );
-        Database { users }
-    }
-    pub fn get_user(&self, id: &i32) -> Option<&User> {
-        self.users.get(id)
+
+/// Handler for ws::Message message
+impl StreamHandler<Result<actix_web_actors::ws::Message, ws::ProtocolError>> for MyWs {
+    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
+        println!("Handle Stream!");
+        match msg {
+            Ok(ws::Message::Ping(msg)) => ctx.pong(&msg),
+            Ok(ws::Message::Text(text)) if text == "login u p" => ctx.text("login successful"),
+            Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
+            _ => (),
+        }
     }
 }
 
-// To make our Database usable by Juniper, we have to implement a marker trait.
-impl juniper::Context for Database {}
-
-// Queries represent the callable funcitons
-struct Query;
-#[graphql_object(context = Database)]
-impl Query {
-    fn api_version() -> &'static str {
-        "1.0"
-    }
-
-    fn user(
-        context: &Database,
-        #[graphql(description = "id of the user")] id: i32,
-    ) -> Option<&User> {
-        context.get_user(&id)
-    }
-}
-
-type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
-
-fn schema() -> Schema {
-    Schema::new(
-        Query,
-        EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new(),
-    )
-}
-
-async fn graphiql_route() -> Result<HttpResponse, Error> {
-    graphiql_handler("/graphql", None).await
-}
-async fn playground_route() -> Result<HttpResponse, Error> {
-    playground_handler("/graphql", None).await
-}
-async fn graphql_route(
+async fn websocket(
     req: actix_web::HttpRequest,
-    payload: actix_web::web::Payload,
-    schema: web::Data<Schema>,
+    stream: web::Payload,
 ) -> Result<HttpResponse, Error> {
-    let context = Database::new();
-    graphql_handler(&schema, &context, req, payload).await
+    let resp = ws::start(MyWs {}, &req, stream);
+    println!("{:?}", resp);
+    resp
 }
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(move || {
+    HttpServer::new(|| {
         App::new()
-            .app_data(Data::new(schema()))
-            .wrap(
-                Cors::default()
-                    .allow_any_origin()
-                    .allowed_methods(vec!["POST", "GET"])
-                    .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
-                    .allowed_header(header::CONTENT_TYPE)
-                    .supports_credentials()
-                    .max_age(3600),
-            )
-            .wrap(middleware::Compress::default())
-            .wrap(middleware::Logger::default())
-            .service(
-                web::resource("/graphql")
-                    .route(web::post().to(graphql_route))
-                    .route(web::get().to(graphql_route)),
-            )
-            .service(web::resource("/playground").route(web::get().to(playground_route)))
-            .service(web::resource("/graphiql").route(web::get().to(graphiql_route)))
+            .route("/ws/", web::get().to(websocket))
             .service(web::resource("/").route(web::get().to(index)))
             .service(web::resource("/{_:.*}").route(web::get().to(dist)))
             .service(web::resource("/dist/{_:.*}").route(web::get().to(dist)))
