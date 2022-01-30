@@ -31,6 +31,7 @@ simple_logger = "1"
 console_log = { version = "0.2", optional = true }
 ws_stream_wasm = "0.7"
 pharos = "0.5"
+graphql_client = "0.10"
 
 #[dependencies.actix-web-actors]
 #git = "https://github.com/actix/actix-web.git"
