@@ -1,4 +1,4 @@
-use actix_web::body::Body;
+use actix_web::body::{BoxBody, MessageBody};
 use actix_web::{web, App, Error, HttpServer};
 use mime_guess::from_path;
 use rust_embed::RustEmbed;
@@ -16,9 +16,9 @@ struct Asset;
 fn handle_embedded_file(path: &str) -> HttpResponse {
     match Asset::get(path) {
         Some(content) => {
-            let body: Body = match content.data {
-                Cow::Borrowed(bytes) => bytes.into(),
-                Cow::Owned(bytes) => bytes.into(),
+            let body: BoxBody = match content.data {
+                Cow::Borrowed(bytes) => MessageBody::boxed(bytes),
+                Cow::Owned(bytes) => MessageBody::boxed(bytes),
             };
             HttpResponse::Ok()
                 .content_type(from_path(path).first_or_octet_stream().as_ref())
@@ -33,7 +33,7 @@ fn index() -> HttpResponse {
 }
 
 fn dist(path: web::Path<String>) -> HttpResponse {
-    handle_embedded_file(&path.0)
+    handle_embedded_file(&path)
 }
 
 /// Define HTTP actor
