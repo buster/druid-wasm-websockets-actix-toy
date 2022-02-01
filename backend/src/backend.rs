@@ -1,5 +1,5 @@
 use actix_web::body::{BoxBody, MessageBody};
-use actix_web::{web, App, Error, HttpServer};
+use actix_web::{web, App, Error, HttpServer, Responder};
 use mime_guess::from_path;
 use rust_embed::RustEmbed;
 
@@ -28,11 +28,11 @@ fn handle_embedded_file(path: &str) -> HttpResponse {
     }
 }
 
-fn index() -> HttpResponse {
+async fn index() -> HttpResponse {
     handle_embedded_file("html/index.html")
 }
 
-fn dist(path: web::Path<String>) -> HttpResponse {
+async fn dist(path: web::Path<String>) -> HttpResponse {
     handle_embedded_file(&path)
 }
 
