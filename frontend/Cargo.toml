@@ -33,6 +33,10 @@ ws_stream_wasm = "0.7"
 pharos = "0.5"
 graphql_client = "0.10"
 
+[dependencies.futures]
+default-features = false
+version = "^0.3"
+
 #[dependencies.actix-web-actors]
 #git = "https://github.com/actix/actix-web.git"
 #[dependencies.actix-web]

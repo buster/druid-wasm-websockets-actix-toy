@@ -1,3 +1,14 @@
+use druid::widget::{Align, Button, Flex, Label, LensWrap, TextBox};
+use druid::{AppLauncher, Data, Env, Lens, LocalizedString, Widget, WidgetExt, WindowDesc};
+use futures::prelude::*;
+use pharos::*;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen_futures::spawn_local;
+use web_sys::{ErrorEvent, MessageEvent, WebSocket};
+use ws_stream_wasm::*;
+
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
 cfg_if::cfg_if! {
@@ -20,18 +31,6 @@ cfg_if::cfg_if! {
         }
     }
 }
-
-use druid::widget::{Align, Button, Flex, Label, LensWrap, TextBox};
-use druid::{AppLauncher, Data, Env, Lens, LocalizedString, Widget, WidgetExt, WindowDesc};
-
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{ErrorEvent, MessageEvent, WebSocket};
-
-use pharos::*;
-use wasm_bindgen::UnwrapThrowExt;
-use wasm_bindgen_futures::spawn_local;
-use ws_stream_wasm::*;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 const TEXT_BOX_WIDTH: f64 = 200.0;
@@ -134,12 +133,13 @@ extern "C" {
 
 fn login(login_state: &mut LoginState) {
     spawn_local(async {
-        let (mut ws, _wsio) = WsMeta::connect("ws://127.0.0.1:8000/ws/", None)
+        let (mut ws, mut wsio) = WsMeta::connect("ws://127.0.0.1:8000/ws/", None)
             .await
             .expect_throw("assume the connection succeeds");
-
+        wsio.send(WsMessage::Text("login u p".to_string()))
+            .await
+            .expect_throw("assume login sending succeeds");
         //        let evts = ws.observe(ObserveConfig::default()).expect_throw("bla");
-
         ws.close().await;
 
         // Note that since WsMeta::connect resolves to an opened connection, we don't see

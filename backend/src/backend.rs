@@ -1,13 +1,13 @@
-use actix_web::body::{BoxBody, MessageBody};
-use actix_web::{web, App, Error, HttpServer, Responder};
-use mime_guess::from_path;
-use rust_embed::RustEmbed;
+use std::borrow::Cow;
 
 use actix::Actor;
 use actix::StreamHandler;
+use actix_web::body::{BoxBody, MessageBody};
 use actix_web::HttpResponse;
+use actix_web::{web, App, Error, HttpServer, Responder};
 use actix_web_actors::ws;
-use std::borrow::Cow;
+use mime_guess::from_path;
+use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
 #[folder = "../frontend/static/"]
@@ -46,7 +46,7 @@ impl Actor for MyWs {
 /// Handler for ws::Message message
 impl StreamHandler<Result<actix_web_actors::ws::Message, ws::ProtocolError>> for MyWs {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-        println!("Handle Stream!");
+        println!("Handle Stream! msg: {:?}", &msg.as_ref().unwrap());
         match msg {
             Ok(ws::Message::Ping(msg)) => ctx.pong(&msg),
             Ok(ws::Message::Text(text)) if text == "login u p" => ctx.text("login successful"),
